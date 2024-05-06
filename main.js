@@ -20,7 +20,8 @@
  */
 
 // 아래의 변수를 수정하여 사용하세요!
-const KEY                = "API 키",                           // https://open.neis.go.kr/portal/guide/actKeyPage.do 에서 발급받은 API 키
+const useResponseFix     = true,                               // 대응 소스를 사용할지의 여부
+      KEY                = "API 키",                           // https://open.neis.go.kr/portal/guide/actKeyPage.do 에서 발급받은 API 키
       schoolType         = 1,                                  // 0: 초등학교, 1: 중학교, 2: 고등학교
       ATPT_OFCDC_SC_CODE = "",                                 // 시도교육청코드
       SD_SCHUL_CODE      = "",                                 // 행정 표준 코드
@@ -80,39 +81,40 @@ const KEY                = "API 키",                           // https://open.
         };
 // 여기까지!
 
-/* 
-  responseFix 함수: 
-   - 제작자  : Dark Tornado
-   - 라이선스: CC BY-NC 4.0
-   - 출처    : https://cafe.naver.com/msgbot/2067
-*/
-
-function onNotificationPosted(sbn, sm) {
+if (useResponseFix) {
+  onNotificationPosted = function (sbn, sm) {
+    /* 
+      responseFix 함수: 
+       - 제작자  : Dark Tornado
+       - 라이선스: CC BY-NC 4.0
+       - 출처    : https://cafe.naver.com/msgbot/2067
+    */
     var packageName = sbn.getPackageName();
-    if (!packageName.startsWith("com.kakao.tal")) return;
-    var actions = sbn.getNotification().actions;
-    if (actions == null) return;
-    var userId = sbn.getUser().hashCode();
-    for (var n = 0; n < actions.length; n++) {
-        var action = actions[n];
-        if (action.getRemoteInputs() == null) continue;
-        var bundle = sbn.getNotification().extras;
-        var msg = bundle.get("android.text").toString();
-        var sender = bundle.getString("android.title");
-        var room = bundle.getString("android.subText");
-        if (room == null) room = bundle.getString("android.summaryText");
-        var isGroupChat = room != null;
-        if (room == null) room = sender;
-        var replier = new com.xfl.msgbot.script.api.legacy.SessionCacheReplier(packageName, action, room, false, "");
-        var icon = bundle.getParcelableArray("android.messages")[0].get("sender_person").getIcon().getBitmap();
-        var image = bundle.getBundle("android.wearable.EXTENSIONS");
-        if (image != null) image = image.getParcelable("background");
-        var imageDB = new com.xfl.msgbot.script.api.legacy.ImageDB(icon, image);
-        com.xfl.msgbot.application.service.NotificationListener.Companion.setSession(packageName, room, action);
-        if (this.hasOwnProperty("responseFix")) {
-            responseFix(room, msg, sender, isGroupChat, replier, imageDB, packageName, userId != 0);
-        }
-    }
+      if (!packageName.startsWith("com.kakao.tal")) return;
+      var actions = sbn.getNotification().actions;
+      if (actions == null) return;
+      var userId = sbn.getUser().hashCode();
+      for (var n = 0; n < actions.length; n++) {
+          var action = actions[n];
+          if (action.getRemoteInputs() == null) continue;
+          var bundle = sbn.getNotification().extras;
+          var msg = bundle.get("android.text").toString();
+          var sender = bundle.getString("android.title");
+          var room = bundle.getString("android.subText");
+          if (room == null) room = bundle.getString("android.summaryText");
+          var isGroupChat = room != null;
+          if (room == null) room = sender;
+          var replier = new com.xfl.msgbot.script.api.legacy.SessionCacheReplier(packageName, action, room, false, "");
+          var icon = bundle.getParcelableArray("android.messages")[0].get("sender_person").getIcon().getBitmap();
+          var image = bundle.getBundle("android.wearable.EXTENSIONS");
+          if (image != null) image = image.getParcelable("background");
+          var imageDB = new com.xfl.msgbot.script.api.legacy.ImageDB(icon, image);
+          com.xfl.msgbot.application.service.NotificationListener.Companion.setSession(packageName, room, action);
+          if (this.hasOwnProperty("responseFix")) {
+              responseFix(room, msg, sender, isGroupChat, replier, imageDB, packageName, userId != 0);
+          }
+      }
+  };
 }
 
 /******************** 잠깐만요! ********************/
@@ -383,7 +385,7 @@ function main (date) {
 }
 
 // 메인
-function responseFix(room, msg, sender, isGroupChat, replier, imageDB, packageName) {
+function responseFunc (room, msg, sender, isGroupChat, replier, imageDB, packageName) {
   if (msg == ".수동") {
     replier.reply(main());
   } else if (msg.startsWith(".수동 ")) {
@@ -394,4 +396,10 @@ function responseFix(room, msg, sender, isGroupChat, replier, imageDB, packageNa
     }
     replier.reply(main(dt));
   }
+}
+
+if (useResponseFix) {
+  responseFix = responseFunc;
+} else {
+  response = responseFunc;
 }
